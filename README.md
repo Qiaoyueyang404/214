@@ -1,16 +1,16 @@
 # FlyDreamAir Lounge Management System
+A Python console-based system for managing global airport lounge bookings, capacity, and occupancy rates.
 
-A Python console application for managing airport lounge bookings, searches, cancellations, and capacity tracking.
-
-## Project Features
-- Lounge search by airport name
-- Lounge booking system
-- Booking cancellation
-- View user bookings
-- File-based data storage
+## Features
+- Search lounges by airport
+- Book lounge access
+- Cancel bookings
+- View personal bookings
+- Display real-time occupancy rate (percentage)
+- File-based data storage (lounge.txt, order.txt)
 
 ## How to Run
-1. Ensure the following files are in the same folder:
+1. Make sure these files are in the same folder:
    - main.py
    - lounge.txt
    - order.txt
@@ -19,11 +19,6 @@ A Python console application for managing airport lounge bookings, searches, can
    python main.py
 
 3. Use the menu to test all functions.
-
-## File Descriptions
-- main.py: Main system code
-- lounge.txt: Lounge and airport information
-- order.txt: Booking records
 
 ---
 
@@ -96,4 +91,4 @@ Action Items: None
 ---
 
 ## Contributor
-Qiao: Meeting records, project closing, lessons learnt, full system code
+Qiao: Meeting records, project closing, lessons learnt, full system implementation
