@@ -1,5 +1,5 @@
-JFK,John F. Kennedy International Airport,JFK Lounge,50
-LAX,Los Angeles International Airport,LAX Lounge,40,33
-LHR,London Heathrow Airport,LHR Lounge,60,51
-DXB,Dubai International Airport,DXB Lounge,70,60
-SIN,Singapore Changi Airport,SIN Lounge,45,38
+JFK,John F. Kennedy International Airport,JFK Lounge,220,186
+LAX,Los Angeles International Airport,LAX Lounge,180,142
+LHR,London Heathrow Airport,LHR Lounge,230,179
+DXB,Dubai International Airport,DXB Lounge,210,165
+SIN,Singapore Changi Airport,SIN Lounge,160,121
