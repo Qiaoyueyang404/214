@@ -1,164 +1,244 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
 import os
 
 def initialize_files():
     if not os.path.exists("lounge.txt"):
-        with open("lounge.txt", "w") as f:
-            f.write("JFK,John F. Kennedy International Airport,JFK Lounge,220,186\n")
-            f.write("LAX,Los Angeles International Airport,LAX Lounge,180,142\n")
-            f.write("LHR,London Heathrow Airport,LHR Lounge,230,179\n")
-            f.write("DXB,Dubai International Airport,DXB Lounge,210,165\n")
-            f.write("SIN,Singapore Changi Airport,SIN Lounge,160,121\n")
+        with open("lounge.txt", "w", encoding="utf-8") as f:
+            # New York (JFK): 35/75 → 46.7% → Stable (Green)
+            f.write("JFK,John F. Kennedy International Airport,New York Lounge,75,40\n")
+            # London (LHR): 76/80 → 95% → Critical (Red)
+            f.write("LHR,London Heathrow Airport,London Lounge,80,4\n")
+            # Dubai (DXB): 55/100 → 55% → Moderate (Yellow)
+            f.write("DXB,Dubai International Airport,Dubai Lounge,100,45\n")
+            # Sydney (SYD): 12/80 → 15% → Stable (Green)
+            f.write("SYD,Sydney Airport,Sydney Lounge,80,68\n")
+            # Singapore (SIN): 22/90 → 24.4% → Stable (Green)
+            f.write("SIN,Singapore Changi Airport,Singapore Lounge,90,68\n")
 
     if not os.path.exists("order.txt"):
-        with open("order.txt", "w") as f:
+        with open("order.txt", "w", encoding="utf-8") as f:
             f.write("")
 
-def search_lounge():
-    print("\n----- Lounge Search -----")
-    airport = input("Enter airport name or code: ")
-    found = False
+class FlyDreamAirGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("FlyDreamAir Lounge System")
+        self.root.geometry("700x800")
+        self.root.resizable(False,False)
+        self.current_user = ""
+        self.selected_lounge = None
+        self.show_login()
 
-    with open("lounge.txt", "r") as f:
-        lines = f.readlines()
+    def clear(self):
+        for w in self.root.winfo_children():
+            w.destroy()
 
-    for line in lines:
-        parts = line.strip().split(",")
-        code = parts[0]
-        airport_name = parts[1]
-        lounge_name = parts[2]
-        total = int(parts[3])
-        available = int(parts[4])
-        occupied = total - available
-        occupancy_rate = (occupied / total) * 100
+    def show_login(self):
+        self.clear()
+        tk.Label(self.root, text="Welcome", font=("Arial",22,"bold")).pack(pady=20)
+        tk.Label(self.root, text="Name", font=("Arial",14)).pack()
+        self.e_name = ttk.Entry(self.root, width=40)
+        self.e_name.pack(pady=5)
+        tk.Label(self.root, text="City", font=("Arial",14)).pack()
+        self.e_city = ttk.Entry(self.root, width=40)
+        self.e_city.pack(pady=5)
+        ttk.Button(self.root, text="Continue", command=self.login_go).pack(pady=30)
 
-        if airport.lower() in code.lower() or airport.lower() in airport_name.lower():
-            print(f"Airport Code:    {code}")
-            print(f"Airport:         {airport_name}")
-            print(f"Lounge Name:     {lounge_name}")
-            print(f"Total Capacity:  {total}")
-            print(f"Available:       {available}")
-            print(f"Occupied:        {occupied}")
-            print(f"Occupancy Rate:  {occupancy_rate:.1f}%")
-            found = True
+    def login_go(self):
+        self.current_user = self.e_name.get().strip()
+        if not self.current_user:
+            messagebox.showwarning("Warning","Please enter your name")
+            return
+        self.show_home()
 
-    if not found:
-        print("No matching lounge found.")
+    def show_home(self):
+        self.clear()
+        tk.Label(self.root, text="FlyDreamAir", font=("Arial",24,"bold")).pack(pady=30)
+        ttk.Button(self.root, text="Find a Lounge", width=30, command=self.show_search).pack(pady=10)
+        ttk.Button(self.root, text="Check Global Occupancy", width=30, command=self.show_global_status).pack(pady=10)
+        ttk.Button(self.root, text="My Bookings", width=30, command=self.show_bookings).pack(pady=10)
+        ttk.Button(self.root, text="Exit", width=30, command=self.root.quit).pack(pady=10)
 
-def book_lounge():
-    print("\n----- Lounge Booking -----")
-    airport = input("Enter airport code or name: ")
-    username = input("Enter your username: ")
-    booking_time = input("Enter booking time (YYYY-MM-DD HH:MM): ")
+    def show_global_status(self):
+        self.clear()
+        tk.Label(self.root, text="Global Occupancy Monitor", font=("Arial",22,"bold")).pack(pady=20)
+        ttk.Button(self.root, text="Check the Global Occupancy", command=self.load_global_status).pack(pady=10)
+        ttk.Button(self.root, text="Back", command=self.show_home).pack(pady=5)
 
-    with open("lounge.txt", "r") as f:
-        lines = f.readlines()
+    def load_global_status(self):
+        for w in self.root.winfo_children():
+            if isinstance(w, ttk.Button) and (w["text"] == "Check the Global Occupancy" or w["text"] == "Back"):
+                continue
+            if isinstance(w, tk.Label) and w["text"] == "Global Occupancy Monitor":
+                continue
+            w.destroy()
 
-    new_lines = []
-    success = False
+        columns = ("location", "current", "max", "status")
+        tree = ttk.Treeview(self.root, columns=columns, show="headings", height=8)
+        tree.heading("location", text="Lounge Location")
+        tree.heading("current", text="Current Guests")
+        tree.heading("max", text="Max Capacity")
+        tree.heading("status", text="Status")
 
-    for line in lines:
-        parts = line.strip().split(",")
-        code = parts[0]
-        name = parts[1]
-        if (airport.lower() in code.lower() or airport.lower() in name.lower()) and int(parts[4]) > 0:
-            new_available = int(parts[4]) - 1
-            new_line = parts[0] + "," + parts[1] + "," + parts[2] + "," + parts[3] + "," + str(new_available) + "\n"
-            new_lines.append(new_line)
-            success = True
+        tree.column("location", width=180)
+        tree.column("current", width=120, anchor="center")
+        tree.column("max", width=120, anchor="center")
+        tree.column("status", width=180, anchor="center")
 
-            with open("order.txt", "a") as f:
-                f.write(username + "," + parts[1] + "," + booking_time + "\n")
-            print("Booking successful!")
-        else:
-            new_lines.append(line)
+        with open("lounge.txt","r",encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split(",")
+                code, airport, name, total, avail = parts[0], parts[1], parts[2], int(parts[3]), int(parts[4])
+                current = total - avail
+                ratio = current / total
 
-    if success:
-        with open("lounge.txt", "w") as f:
-            f.writelines(new_lines)
-    else:
-        print("Booking failed: No availability or invalid airport.")
-
-def cancel_booking():
-    print("\n----- Cancel Booking -----")
-    username = input("Enter username: ")
-    airport = input("Enter airport to cancel: ")
-
-    with open("order.txt", "r") as f:
-        orders = f.readlines()
-
-    new_orders = []
-    found = False
-
-    for order in orders:
-        parts = order.strip().split(",")
-        if parts[0] == username and airport.lower() in parts[1].lower():
-            found = True
-            with open("lounge.txt", "r") as f:
-                lounges = f.readlines()
-
-            new_lounges = []
-            for lounge in lounges:
-                l_parts = lounge.strip().split(",")
-                if airport.lower() in l_parts[1].lower() or airport.lower() in l_parts[0].lower():
-                    updated_avail = int(l_parts[4]) + 1
-                    new_lounges.append(l_parts[0] + "," + l_parts[1] + "," + l_parts[2] + "," + l_parts[3] + "," + str(updated_avail) + "\n")
+                if ratio >= 0.9:
+                    status = "Critical (Red)"
+                elif ratio >= 0.5:
+                    status = "Moderate (Yellow)"
                 else:
-                    new_lounges.append(lounge)
+                    status = "Stable (Green)"
 
-            with open("lounge.txt", "w") as f:
-                f.writelines(new_lounges)
+                tree.insert("", tk.END, values=(f"{name} ({code})", current, total, status))
+
+        tree.pack(pady=10)
+
+    def show_search(self):
+        self.clear()
+        tk.Label(self.root, text="Lounge Search", font=("Arial",22,"bold")).pack(pady=20)
+        tk.Label(self.root, text="Airport / Code").pack()
+        self.e_search = ttk.Entry(self.root, width=40)
+        self.e_search.pack(pady=5)
+        ttk.Button(self.root, text="Search", command=self.do_search).pack(pady=10)
+        ttk.Button(self.root, text="Back", command=self.show_home).pack()
+
+    def do_search(self):
+        key = self.e_search.get().lower().strip()
+        res = []
+        with open("lounge.txt","r",encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                p = line.split(",")
+                code, airport, name, total, avail = p[0], p[1], p[2], int(p[3]), int(p[4])
+                if key in code.lower() or key in airport.lower():
+                    occ = total - avail
+                    rate = f"{occ/total*100:.1f}%"
+                    res.append((code, airport, name, total, avail, occ, rate))
+        self.show_result(res)
+
+    def show_result(self, lst):
+        self.clear()
+        tk.Label(self.root, text="Results & Occupancy", font=("Arial",22,"bold")).pack(pady=20)
+        if not lst:
+            tk.Label(self.root,text="No lounge found").pack()
+        for item in lst:
+            code, airport, name, total, avail, occ, rate = item
+            frm = ttk.LabelFrame(self.root, text=name)
+            frm.pack(pady=10, padx=30, fill="x")
+            tk.Label(frm, text=f"Airport: {airport} ({code})").pack(anchor="w")
+            tk.Label(frm, text=f"Capacity: {total} | Available: {avail}").pack(anchor="w")
+            tk.Label(frm, text=f"Occupancy Rate: {rate}").pack(anchor="w")
+            ttk.Button(frm, text="Book Now", command=lambda x=item: self.book(x)).pack(pady=5)
+        ttk.Button(self.root, text="Back", command=self.show_search).pack(pady=10)
+
+    def book(self, lounge):
+        self.selected_lounge = lounge
+        self.clear()
+        tk.Label(self.root, text="Booking", font=("Arial",22,"bold")).pack(pady=30)
+        tk.Label(self.root, text=f"Lounge: {lounge[2]}").pack()
+        tk.Label(self.root, text=f"Airport: {lounge[1]}").pack()
+        tk.Label(self.root, text="Time (YYYY-MM-DD HH:MM)").pack(pady=10)
+        self.e_time = ttk.Entry(self.root, width=40)
+        self.e_time.pack(pady=5)
+        ttk.Button(self.root, text="Confirm Booking", command=self.confirm).pack(pady=20)
+        ttk.Button(self.root, text="Back", command=self.show_search).pack()
+
+    def confirm(self):
+        t = self.e_time.get().strip()
+        if not t:
+            messagebox.showwarning("Warning","Please enter booking time")
+            return
+        code, airport, name, total, avail, occ, rate = self.selected_lounge
+        with open("lounge.txt","r",encoding="utf-8") as f:
+            lines = f.readlines()
+        new_lines = []
+        ok = False
+        for line in lines:
+            p = line.strip().split(",")
+            if len(p)>=5 and p[1] == airport and int(p[4])>0:
+                p[4] = str(int(p[4])-1)
+                new_lines.append(",".join(p)+"\n")
+                ok = True
+            else:
+                new_lines.append(line)
+        if ok:
+            with open("lounge.txt","w",encoding="utf-8") as f:
+                f.writelines(new_lines)
+            with open("order.txt","a",encoding="utf-8") as f:
+                f.write(f"{self.current_user},{airport},{t}\n")
+            messagebox.showinfo("Success","Booking Confirmed")
+            self.show_done()
         else:
-            new_orders.append(order)
+            messagebox.showerror("Failed","No available seats")
 
-    if found:
-        with open("order.txt", "w") as f:
-            f.writelines(new_orders)
-        print("Booking cancelled successfully.")
-    else:
-        print("No matching booking found.")
+    def show_done(self):
+        self.clear()
+        tk.Label(self.root, text="You're all set!!", font=("Arial",24,"bold")).pack(pady=50)
+        tk.Label(self.root, text="Booking Successful", font=("Arial",16)).pack()
+        ttk.Button(self.root, text="Home", command=self.show_home).pack(pady=30)
 
-def view_bookings():
-    print("\n----- My Bookings -----")
-    username = input("Enter username: ")
-    found = False
-
-    with open("order.txt", "r") as f:
-        orders = f.readlines()
-
-    for order in orders:
-        parts = order.strip().split(",")
-        if parts[0] == username:
-            print("User: " + parts[0] + " | Airport: " + parts[1] + " | Time: " + parts[2])
-            found = True
-
-    if not found:
-        print("No bookings found.")
-
-def main():
-    initialize_files()
-    while True:
-        print("\n===== FlyDreamAir Lounge Management System =====")
-        print("1. Search Lounge")
-        print("2. Book Lounge")
-        print("3. Cancel Booking")
-        print("4. View My Bookings")
-        print("0. Exit System")
-
-        choice = input("Enter your choice: ")
-
-        if choice == "1":
-            search_lounge()
-        elif choice == "2":
-            book_lounge()
-        elif choice == "3":
-            cancel_booking()
-        elif choice == "4":
-            view_bookings()
-        elif choice == "0":
-            print("System exited.")
-            break
+    def show_bookings(self):
+        self.clear()
+        tk.Label(self.root, text="My Bookings", font=("Arial",22,"bold")).pack(pady=30)
+        with open("order.txt","r",encoding="utf-8") as f:
+            lines = f.readlines()
+        user_bookings = [line.strip() for line in lines if line.startswith(self.current_user+",")]
+        if not user_bookings:
+            tk.Label(self.root, text="No bookings yet").pack(pady=10)
         else:
-            print("Invalid input. Please try again.")
+            for line in user_bookings:
+                parts = line.split(",")
+                if len(parts)!=3:
+                    continue
+                user, airport, time = parts
+                frm = ttk.Frame(self.root)
+                frm.pack(pady=4)
+                tk.Label(frm, text=f"{airport} | {time}", font=("Arial",13)).pack(side="left", padx=5)
+                ttk.Button(frm, text="Cancel", command=lambda line=line: self.cancel_booking(line)).pack(side="left")
+        ttk.Button(self.root, text="Back", command=self.show_home).pack(pady=20)
+
+    def cancel_booking(self, booking_line):
+        user, airport, time = booking_line.split(",")
+        if not messagebox.askyesno("Confirm","Are you sure to cancel this booking?"):
+            return
+        with open("order.txt","r",encoding="utf-8") as f:
+            lines = f.readlines()
+        new_order_lines = [l for l in lines if l.strip() != booking_line.strip()]
+        with open("order.txt","w",encoding="utf-8") as f:
+            f.writelines(new_order_lines)
+        with open("lounge.txt","r",encoding="utf-8") as f:
+            lounge_lines = f.readlines()
+        new_lounge_lines = []
+        for l in lounge_lines:
+            p = l.strip().split(",")
+            if len(p)>=5 and p[1] == airport:
+                p[4] = str(int(p[4])+1)
+                new_lounge_lines.append(",".join(p)+"\n")
+            else:
+                new_lounge_lines.append(l)
+        with open("lounge.txt","w",encoding="utf-8") as f:
+            f.writelines(new_lounge_lines)
+        messagebox.showinfo("Success","Booking cancelled successfully")
+        self.show_bookings()
 
 if __name__ == "__main__":
-    main()
+    initialize_files()
+    root = tk.Tk()
+    FlyDreamAirGUI(root)
+    root.mainloop()
